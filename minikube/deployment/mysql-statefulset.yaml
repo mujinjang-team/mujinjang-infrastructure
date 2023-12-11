@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mujinjang-mysql
+  namespace: mujinjang
+  labels:
+    app: mujinjang-mysql
+spec:
+  replicas: 1
+  serviceName: mujinjang-mysql
+  selector:
+    matchLabels:
+      app: mujinjang-mysql
+  template:
+    metadata:
+      labels:
+        app: mujinjang-mysql
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: mujinjang-mysql
+          image: mysql/mysql-server:8.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3306
+          env:
+            - name: TZ
+              value: Asia/Seoul
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mujinjang-api-secret
+                  key: DATABASE_PASSWORD
+            - name: MYSQL_DATABASE
+              value: "coupon"
+            - name: MYSQL_ROOT_HOST
+              value: "%"
+          volumeMounts:
+            - name: mysql-persistent-storage
+              mountPath: /var/lib/mysql
+            - name: mysql-initdb
+              mountPath: /docker-entrypoint-initdb.d
+      volumes:
+        - name: mysql-initdb
+          configMap:
+            name: mysql-initdb-config
+  volumeClaimTemplates:
+    - metadata:
+        name: mysql-persistent-storage
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 1Gi
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: mysql-initdb-config
+data:
+  initdb.sql: |
+    CREATE TABLE users
+    (
+        id       BIGINT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(255) NOT NULL
+    );
+    
+    CREATE TABLE coupon
+    (
+        id         BIGINT AUTO_INCREMENT PRIMARY KEY,
+        name       VARCHAR(255) NOT NULL,
+        code       VARCHAR(255) NOT NULL UNIQUE,
+        type       VARCHAR(255) NOT NULL,
+        discount   DOUBLE       NOT NULL,
+        amount     BIGINT       NOT NULL,
+        created_at DATETIME     NOT NULL
+    );
+    
+    CREATE TABLE coupon_wallet
+    (
+        id         BIGINT AUTO_INCREMENT PRIMARY KEY,
+        coupon_id  BIGINT   NOT NULL,
+        user_id    BIGINT   NOT NULL,
+        created_at DATETIME NOT NULL,
+        used_at    DATETIME,
+        FOREIGN KEY (coupon_id) REFERENCES coupon (id),
+        FOREIGN KEY (user_id) REFERENCES users (id)
+    );

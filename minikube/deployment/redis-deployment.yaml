@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mujinjang-redis
+  namespace: mujinjang
+  labels:
+    app: mujinjang-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mujinjang-redis
+  template:
+    metadata:
+      labels:
+        app: mujinjang-redis
+    spec:
+      containers:
+        - name: mujinjang-redis
+          image: redis:alpine
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 6379
+          env:
+            - name: TZ
+              value: Asia/Seoul

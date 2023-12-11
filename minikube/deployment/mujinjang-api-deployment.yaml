@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mujinjang-api
+  namespace: mujinjang
+  labels:
+    app: mujinjang-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mujinjang-api
+  template:
+    metadata:
+      labels:
+        app: mujinjang-api
+    spec:
+      containers:
+        - name: mujinjang-api
+          image: ghcr.io/mujinjang-team/mujinjang:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: TZ
+              value: Asia/Seoul
+            - name: R2DBC_HOST
+              value: mujinjang-mysql
+            - name: R2DBC_PORT
+              value: "3306"
+            - name: R2DBC_USERNAME
+              value: root
+            - name: R2DBC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mujinjang-api-secret
+                  key: DATABASE_PASSWORD
+            - name: REDIS_HOST
+              value: mujinjang-redis
+            - name: REDIS_PORT
+              value: "6379"
+            - name: R2DBC_LOGGING_LEVEL
+              value: DEBUG
+      imagePullSecrets:
+        - name: mujinjang-api-dockerconfigjson

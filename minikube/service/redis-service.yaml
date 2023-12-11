@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mujinjang-redis
+  namespace: mujinjang
+  labels:
+    app: mujinjang-redis
+spec:
+  ports:
+    - port: 6379
+      name: mujinjang-redis
+  clusterIP: None
+  selector:
+    app: mujinjang-redis
